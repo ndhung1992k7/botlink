@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BotLink Chat - Link Shortener</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar Settings -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>⚙️ Settings</h2>
+        <button class="close-btn" onclick="toggleSidebar()">✕</button>
+      </div>
+      
+      <div class="settings-group">
+        <label>Title Template:</label>
+        <input type="text" id="titleInput" placeholder="🔗 Shortened Links" value="🔗 Shortened Links">
+      </div>
+
+      <div class="settings-group">
+        <label>Format Template:</label>
+        <textarea id="formatInput" placeholder="[TITLE]\n[URL]">[TITLE]
+[URL]</textarea>
+        <small>Gunakan [TITLE] dan [URL] sebagai placeholder</small>
+      </div>
+
+      <div class="settings-group">
+        <label>Hastebin Token:</label>
+        <input type="password" id="hastebinToken" placeholder="Bearer token">
+      </div>
+
+      <div class="settings-group">
+        <label>Anonlink API Key:</label>
+        <input type="password" id="anonlinkKey" placeholder="Your API Key">
+      </div>
+
+      <div class="settings-group">
+        <label>Linkx API Key:</label>
+        <input type="password" id="linkxKey" placeholder="Your API Key">
+      </div>
+
+      <div class="settings-group">
+        <label>Mual API Key:</label>
+        <input type="password" id="mualKey" placeholder="Your API Key">
+      </div>
+
+      <button class="btn-save" onclick="saveSettings()">💾 Save Settings</button>
+      <button class="btn-clear" onclick="clearHistory()">🗑️ Clear History</button>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-container">
+      <!-- Header -->
+      <div class="chat-header">
+        <h1>🤖 BotLink Chat</h1>
+        <button class="settings-btn" onclick="toggleSidebar()">⚙️</button>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages" id="messages"></div>
+
+      <!-- Loading -->
+      <div class="loading" id="loading" style="display: none;">
+        <div class="spinner"></div>
+        <span>Processing...</span>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <input 
+          type="text" 
+          id="urlInput" 
+          placeholder="Paste your link here... (e.g., https://example.com)"
+          onkeypress="handleKeyPress(event)"
+        >
+        <button class="btn-send" onclick="sendLink()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

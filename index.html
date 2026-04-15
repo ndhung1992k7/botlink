@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BotLink Chat - Link Shortener</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 320px;
+      background: white;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+      position: absolute;
+      left: -320px;
+      top: 0;
+      height: 100%;
+      z-index: 1000;
+      transition: left 0.3s ease;
+    }
+
+    .sidebar.active {
+      left: 0;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 15px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .settings-group {
+      margin-bottom: 15px;
+    }
+
+    .settings-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #333;
+      font-size: 13px;
+    }
+
+    .settings-group input,
+    .settings-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: monospace;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+
+    .settings-group textarea {
+      resize: vertical;
+      min-height: 60px;
+      font-size: 12px;
+    }
+
+    .settings-group small {
+      display: block;
+      margin-top: 3px;
+      color: #999;
+      font-size: 11px;
+    }
+
+    .btn-save, .btn-clear {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-bottom: 10px;
+      transition: background 0.3s;
+    }
+
+    .btn-save {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-save:hover {
+      background: #5568d3;
+    }
+
+    .btn-clear {
+      background: #ff6b6b;
+      color: white;
+    }
+
+    .btn-clear:hover {
+      background: #ff5252;
+    }
+
+    /* Chat Container */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      margin: 10px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .settings-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+
+    .settings-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Messages */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .message {
+      display: flex;
+      gap: 10px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message-bubble {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      word-wrap: break-word;
+      line-height: 1.4;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+
+    .message.user .message-bubble {
+      background: #667eea;
+      color: white;
+      border-radius: 18px 4px 18px 18px;
+    }
+
+    .message.bot .message-bubble {
+      background: #f0f0f0;
+      color: #333;
+      border-radius: 4px 18px 18px 18px;
+    }
+
+    .links-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .link-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f9f9f9;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .link-label {
+      min-width: 50px;
+      font-weight: 600;
+      color: #667eea;
+      font-size: 12px;
+    }
+
+    .link-text {
+      flex: 1;
+      font-size: 13px;
+      color: #0066cc;
+      word-break: break-all;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .link-text:hover {
+      color: #004499;
+    }
+
+    .copy-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.3s;
+    }
+
+    .copy-btn:hover {
+      background: #5568d3;
+    }
+
+    .copy-btn.copied {
+      background: #28a745;
+    }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      padding: 20px;
+      color: #666;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Input Area */
+    .input-area {
+      display: flex;
+      gap: 10px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    #urlInput {
+      flex: 1;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 24px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.3s;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+
+    #urlInput:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-send {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 24px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-send:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-send:active {
+      transform: translateY(0);
+    }
+
+    .error-message {
+      color: #ff6b6b;
+      background: #ffe0e0;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    @media (max-width: 768px) {
+      .message-bubble {
+        max-width: 90%;
+      }
+      
+      .sidebar {
+        width: 280px;
+        left: -280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar Settings -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>⚙️ Settings</h2>
+        <button class="close-btn" onclick="toggleSidebar()">✕</button>
+      </div>
+      
+      <div class="settings-group">
+        <label>Backend URL:</label>
+        <input type="text" id="backendUrl" placeholder="http://localhost:3000 or https://your-render-app.onrender.com" value="http://localhost:3000">
+        <small>⚠️ Enter your Node.js backend URL</small>
+      </div>
+
+      <div class="settings-group">
+        <label>Title Template:</label>
+        <input type="text" id="titleInput" placeholder="🔗 Shortened Links" value="🔗 Shortened Links">
+      </div>
+
+      <div class="settings-group">
+        <label>Format Template:</label>
+        <textarea id="formatInput" placeholder="[TITLE]\n[URL]">[TITLE]
+[URL]</textarea>
+        <small>Gunakan [TITLE] dan [URL] sebagai placeholder</small>
+      </div>
+
+      <div class="settings-group">
+        <label>Hastebin Token:</label>
+        <input type="password" id="hastebinToken" placeholder="Bearer token">
+      </div>
+
+      <div class="settings-group">
+        <label>Anonlink API Key:</label>
+        <input type="password" id="anonlinkKey" placeholder="Your API Key">
+      </div>
+
+      <div class="settings-group">
+        <label>Linkx API Key:</label>
+        <input type="password" id="linkxKey" placeholder="Your API Key">
+      </div>
+
+      <div class="settings-group">
+        <label>Mual API Key:</label>
+        <input type="password" id="mualKey" placeholder="Your API Key">
+      </div>
+
+      <button class="btn-save" onclick="saveSettings()">💾 Save Settings</button>
+      <button class="btn-clear" onclick="clearHistory()">🗑️ Clear History</button>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-container">
+      <!-- Header -->
+      <div class="chat-header">
+        <h1>🤖 BotLink Chat</h1>
+        <button class="settings-btn" onclick="toggleSidebar()">⚙️</button>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages" id="messages"></div>
+
+      <!-- Loading -->
+      <div class="loading" id="loading" style="display: none;">
+        <div class="spinner"></div>
+        <span>Processing...</span>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <input 
+          type="text" 
+          id="urlInput" 
+          placeholder="Paste your link here... (e.g., https://example.com)"
+          onkeypress="handleKeyPress(event)"
+        >
+        <button class="btn-send" onclick="sendLink()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Disable right click
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // Disable F12, Ctrl+Shift+I, Ctrl+Shift+C
+    document.addEventListener('keydown', (e) => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+        (e.ctrlKey && e.shiftKey && e.key === 'C')
+      ) {
+        e.preventDefault();
+      }
+    });
+
+    // Settings Storage
+    class Settings {
+      constructor() {
+        this.load();
+      }
+
+      load() {
+        const saved = localStorage.getItem('botlink_settings');
+        if (saved) {
+          const settings = JSON.parse(saved);
+          document.getElementById('backendUrl').value = settings.backendUrl || 'http://localhost:3000';
+          document.getElementById('titleInput').value = settings.title || '🔗 Shortened Links';
+          document.getElementById('formatInput').value = settings.format || '[TITLE]\n[URL]';
+          document.getElementById('hastebinToken').value = settings.hastebinToken || '';
+          document.getElementById('anonlinkKey').value = settings.anonlink || '';
+          document.getElementById('linkxKey').value = settings.linkx || '';
+          document.getElementById('mualKey').value = settings.mual || '';
+        }
+      }
+
+      save() {
+        const settings = {
+          backendUrl: document.getElementById('backendUrl').value,
+          title: document.getElementById('titleInput').value,
+          format: document.getElementById('formatInput').value,
+          hastebinToken: document.getElementById('hastebinToken').value,
+          anonlink: document.getElementById('anonlinkKey').value,
+          linkx: document.getElementById('linkxKey').value,
+          mual: document.getElementById('mualKey').value,
+        };
+        localStorage.setItem('botlink_settings', JSON.stringify(settings));
+        alert('✅ Settings saved!');
+      }
+
+      get() {
+        return {
+          backendUrl: document.getElementById('backendUrl').value || 'http://localhost:3000',
+          title: document.getElementById('titleInput').value,
+          format: document.getElementById('formatInput').value,
+          hastebinToken: document.getElementById('hastebinToken').value,
+          apiKeys: {
+            anonlink: document.getElementById('anonlinkKey').value,
+            linkx: document.getElementById('linkxKey').value,
+            mual: document.getElementById('mualKey').value,
+          },
+        };
+      }
+    }
+
+    // Chat History
+    class ChatHistory {
+      constructor() {
+        this.load();
+      }
+
+      load() {
+        const saved = localStorage.getItem('botlink_history');
+        this.history = saved ? JSON.parse(saved) : [];
+      }
+
+      save() {
+        localStorage.setItem('botlink_history', JSON.stringify(this.history));
+      }
+
+      add(message, response) {
+        this.history.push({
+          timestamp: new Date().toISOString(),
+          message,
+          response,
+        });
+        this.save();
+      }
+
+      clear() {
+        this.history = [];
+        this.save();
+      }
+
+      get() {
+        return this.history;
+      }
+    }
+
+    // Initialize
+    const settings = new Settings();
+    const chatHistory = new ChatHistory();
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('active');
+    }
+
+    function saveSettings() {
+      settings.save();
+      toggleSidebar();
+    }
+
+    function clearHistory() {
+      if (confirm('Are you sure? This will delete all chat history.')) {
+        chatHistory.clear();
+        document.getElementById('messages').innerHTML = '';
+        alert('✅ History cleared!');
+      }
+    }
+
+    function addMessage(text, isUser = false) {
+      const messagesDiv = document.getElementById('messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      bubble.innerHTML = text;
+
+      messageDiv.appendChild(bubble);
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    async function sendLink() {
+      const urlInput = document.getElementById('urlInput');
+      const url = urlInput.value.trim();
+
+      if (!url) {
+        alert('⚠️ Please enter a URL');
+        return;
+      }
+
+      // Validate URL
+      try {
+        new URL(url);
+      } catch {
+        alert('⚠️ Invalid URL format');
+        return;
+      }
+
+      // Show user message
+      addMessage(`📎 ${url}`, true);
+      urlInput.value = '';
+
+      // Show loading
+      document.getElementById('loading').style.display = 'flex';
+
+      try {
+        const settingsData = settings.get();
+        const backendUrl = settingsData.backendUrl.replace(/\/$/, '');
+
+        const response = await fetch(`${backendUrl}/api/shorten`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url,
+            title: settingsData.title,
+            format: settingsData.format,
+            apiKeys: settingsData.apiKeys,
+            hastebinToken: settingsData.hastebinToken,
+          }),
+        });
+
+        const data = await response.json();
+        document.getElementById('loading').style.display = 'none';
+
+        if (data.success) {
+          // Display results
+          let resultHTML = `<strong>${data.title}</strong><div class="links-container">`;
+
+          for (const [key, link] of Object.entries(data.links)) {
+            const label = key === 'link1' ? 'anonlink' : key === 'link2' ? 'linkx' : 'mual';
+            const isError = link.startsWith('Error:');
+
+            resultHTML += `
+              <div class="link-item">
+                <span class="link-label">${label}</span>
+                <span class="link-text" onclick="openLink('${link}')">${link}</span>
+                <button class="copy-btn" onclick="copyToClipboard(this, '${link}')">Copy</button>
+              </div>
+            `;
+
+            if (isError) {
+              resultHTML += `<div class="error-message">${link}</div>`;
+            }
+          }
+
+          resultHTML += '</div>';
+          addMessage(resultHTML);
+
+          // Save to history
+          chatHistory.add(url, data.links);
+        } else {
+          addMessage(`❌ Error: ${data.error || 'Unknown error'}`, false);
+          document.getElementById('loading').style.display = 'none';
+        }
+      } catch (error) {
+        document.getElementById('loading').style.display = 'none';
+        addMessage(`❌ Error: ${error.message}<br>⚠️ Make sure backend is running at: ${settings.get().backendUrl}`, false);
+      }
+    }
+
+    function copyToClipboard(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    function openLink(link) {
+      if (!link.startsWith('Error:')) {
+        window.open(link, '_blank');
+      }
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') {
+        sendLink();
+      }
+    }
+
+    // Load history on startup
+    window.addEventListener('load', () => {
+      const messages = document.getElementById('messages');
+      messages.innerHTML = `
+        <div class="message bot">
+          <div class="message-bubble">
+            👋 Welcome to BotLink Chat!<br><br>
+            <strong>How to use:</strong><br>
+            1. ⚙️ Click settings to configure backend URL & API keys<br>
+            2. 📎 Paste your link in the input box<br>
+            3. ✨ Bot will shorten it via 3 services<br><br>
+            <strong>⚠️ Important:</strong><br>
+            Make sure your Node.js backend is running!<br>
+            Backend URL: <code id="backendDisplay">http://localhost:3000</code>
+          </div>
+        </div>
+      `;
+      document.getElementById('backendDisplay').textContent = settings.get().backendUrl;
+    });
+  </script>
+</body>
+</html>
